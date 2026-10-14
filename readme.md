@@ -4,4 +4,4 @@
 ### **_Graficación_**
 ### Práctica: **Publicación colaborativa de códigos fuente (HTML+CSS+JS)**
 ### Autor: **Sánchez García Juan Pablo**
-### Fecha:**4 septiembre 2026**
+### Fecha:**14 de Octube 2026**
