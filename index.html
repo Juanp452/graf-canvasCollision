@@ -3,14 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Colisiones 2D Neón</title>
-    <!-- Fuente futurista Orbitron -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&display=swap" rel="stylesheet">
+    <title>NEON FALLING GAME - Graficación</title>
+    <!-- Fuente Cyberpunk / Neón -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="game-container">
-        <canvas id="canvas"></canvas>
+    <!-- Encabezado Neón -->
+    <header class="neon-header">
+        <h1 class="neon-title">NEON <span class="highlight">COLLISION</span> GAME</h1>
+        <p class="neon-subtitle">Graficación 2D • Caída Libre & Rebote Parabólico</p>
+    </header>
+
+    <!-- Panel de Botones Neón G y F -->
+    <div class="controls-panel">
+        <button id="btnG" class="neon-btn active">BOTÓN [G]: GRAVEDAD ON</button>
+        <button id="btnF" class="neon-btn active">BOTÓN [F]: COLISIÓN ON</button>
     </div>
+
+    <!-- Canvas principal -->
+    <canvas id="canvas"></canvas>
+
     <script src="colision.js"></script>
 </body>
 </html>

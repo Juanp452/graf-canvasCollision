@@ -1,145 +1,158 @@
-// -------------------------------------------------------------
-// 1. ESTILOS CSS Y LEYENDA TECLADO (Inyectados dinámicamente)
-// -------------------------------------------------------------
-const style = document.createElement('style');
-style.textContent = `
+// =============================================================
+// 1. INYECCIÓN DE ESTILOS CSS NEÓN PARA HTML Y BOTONES G Y F
+// =============================================================
+const styleElement = document.createElement("style");
+styleElement.innerHTML = `
     * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
     }
     body {
-        background: #090a0f;
         overflow: hidden;
-        font-family: 'Orbitron', Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        width: 100vw;
+        background-color: #05020a;
+        font-family: 'Orbitron', sans-serif;
+        user-select: none;
     }
-    .game-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: radial-gradient(circle at center, #14192d 0%, #050608 100%);
-    }
-    .game-container::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: 
-            linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
-        background-size: 50px 50px;
-        pointer-events: none;
-    }
-    #canvas {
-        display: block;
-        box-shadow: 0 0 30px rgba(0, 243, 255, 0.2), inset 0 0 15px rgba(0, 243, 255, 0.1);
-        border: 1px solid rgba(0, 243, 255, 0.3);
-    }
-    /* Panel de HUD para los controles de física */
-    #hud {
+    .neon-header {
         position: absolute;
         top: 15px;
-        left: 15px;
-        color: #00f3ff;
-        font-size: 12px;
-        background: rgba(5, 6, 8, 0.7);
-        padding: 10px 15px;
-        border: 1px solid rgba(0, 243, 255, 0.3);
-        border-radius: 5px;
+        left: 25px;
+        z-index: 10;
         pointer-events: none;
-        box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+    }
+    .neon-title {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f, 0 0 40px #ff007f;
+    }
+    .neon-title .highlight {
+        color: #00f0ff;
+        text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff, 0 0 40px #00f0ff;
+    }
+    .neon-subtitle {
+        color: #e0e0e0;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-shadow: 0 0 5px #00f0ff;
+        margin-top: 2px;
+    }
+
+    /* BOTONES NEÓN G Y F */
+    .controls-panel {
+        position: absolute;
+        bottom: 25px;
+        left: 25px;
+        z-index: 100;
+        display: flex;
+        gap: 15px;
+    }
+    .neon-btn {
+        background: rgba(10, 15, 30, 0.85);
+        border: 2px solid #00f0ff;
+        color: #00f0ff;
+        padding: 10px 18px;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 12px;
+        font-weight: 800;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 0 10px #00f0ff;
+        transition: all 0.3s ease;
+    }
+    .neon-btn.active {
+        border-color: #ff007f;
+        color: #ffffff;
+        background: rgba(255, 0, 127, 0.2);
+        box-shadow: 0 0 15px #ff007f, inset 0 0 10px #ff007f;
+    }
+    .neon-btn:hover {
+        transform: scale(1.05);
+    }
+
+    canvas {
+        display: block;
+        cursor: pointer;
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(styleElement);
 
-// Crear panel indicativo HUD
-const hud = document.createElement('div');
-hud.id = 'hud';
-hud.innerHTML = `
-    <strong>CONTROLES DE FÍSICA:</strong><br>
-    [G] Gravedad: <span id="grav-status">DESACTIVADA</span><br>
-    [F] Fricción: <span id="fric-status">DESACTIVADA</span>
-`;
-document.body.appendChild(hud);
-
-// -------------------------------------------------------------
-// 2. CONFIGURACIÓN GLOBAL Y PARÁMETROS FÍSICOS
-// -------------------------------------------------------------
+// =============================================================
+// 2. CONFIGURACIÓN DEL CANVAS Y ESTADO GLOBAL
+// =============================================================
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let window_height = window.innerHeight;
-let window_width = window.innerWidth;
-
-canvas.height = window_height;
+const window_width = window.innerWidth;
+const window_height = window.innerHeight;
 canvas.width = window_width;
+canvas.height = window_height;
 
-// Variables de entorno físico
-let enableGravity = false;
-let enableFriction = false;
-const GRAVITY = 0.2;
-const FRICTION = 0.992;
-const RESTITUTION = 0.9; // Elasticidad de choque (90% rebote)
+let score = 0;
+const TOTAL_OBJECTS = 25;
 
-window.addEventListener("resize", () => {
-    window_height = window.innerHeight;
-    window_width = window.innerWidth;
-    canvas.height = window_height;
-    canvas.width = window_width;
+let gravityEnabled = true;  // Estado del Botón [G]
+let collisionEnabled = true; // Estado del Botón [F]
+
+// RUTAS DE LAS IMÁGENES
+const WALLPAPER_PATH = "assets/img/images (3).jpg";
+
+const IMAGE_DATA = [
+    { name: "F1: Dog", path: "assets/img/dog (1).png" },
+    { name: "F2: DogNeon", path: "assets/img/dog.png" },
+    { name: "F3: Globe", path: "assets/img/globe.png" },
+    { name: "F4: Headset", path: "assets/img/headset.png" },
+    { name: "F5: Bolt", path: "assets/img/neon.png" },
+    { name: "F6: Camera", path: "assets/img/neon-camera.png" },
+    { name: "F7: Pad1", path: "assets/img/neon-controller (1).png" },
+    { name: "F8: Pad2", path: "assets/img/neon-controller.png" },
+    { name: "F9: Burger", path: "assets/img/neon-hamburger.png" },
+    { name: "F10: Bulb", path: "assets/img/neon-light-bulb.png" }
+];
+
+const bgImage = new Image();
+bgImage.src = WALLPAPER_PATH;
+
+const loadedImages = IMAGE_DATA.map(item => {
+    const img = new Image();
+    img.src = item.path;
+    return { name: item.name, img: img };
 });
 
-// Teclado para conmutar física
-window.addEventListener("keydown", (e) => {
-    if (e.key.toLowerCase() === "g") {
-        enableGravity = !enableGravity;
-        document.getElementById("grav-status").textContent = enableGravity ? "ACTIVADA" : "DESACTIVADA";
-        document.getElementById("grav-status").style.color = enableGravity ? "#00ff66" : "#00f3ff";
-    }
-    if (e.key.toLowerCase() === "f") {
-        enableFriction = !enableFriction;
-        document.getElementById("fric-status").textContent = enableFriction ? "ACTIVADA" : "DESACTIVADA";
-        document.getElementById("fric-status").style.color = enableFriction ? "#00ff66" : "#00f3ff";
-    }
-});
-
-let particles = [];
-
-// -------------------------------------------------------------
-// CLASE PARTICLE (Chispas con gravedad propia)
-// -------------------------------------------------------------
+// =============================================================
+// 3. CLASE PARTÍCULA (SISTEMA DE EXPLOSIÓN NEÓN)
+// =============================================================
 class Particle {
-    constructor(x, y, color) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.color = color;
-        this.radius = Math.random() * 3 + 1.5;
+        this.radius = Math.random() * 3 + 2;
         
+        // Paleta de colores neón para la explosión
+        const colors = ["#ff007f", "#00f0ff", "#ffbb00", "#00ff88", "#ffffff"];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Dirección y velocidad de explosión
         const angle = Math.random() * Math.PI * 2;
         const speed = Math.random() * 6 + 2;
-        this.dx = Math.cos(angle) * speed;
-        this.dy = Math.sin(angle) * speed;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
         
-        this.life = 1.0;
-        this.decay = Math.random() * 0.03 + 0.02;
+        this.alpha = 1; // Transparencia para desvanecimiento
+        this.friction = 0.95; // Rozamiento
+        this.gravity = 0.1;   // Caída suave de la partícula
     }
 
     draw(context) {
         context.save();
-        context.globalAlpha = this.life;
+        context.globalAlpha = this.alpha;
         context.shadowColor = this.color;
         context.shadowBlur = 10;
         context.fillStyle = this.color;
-
         context.beginPath();
         context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         context.fill();
@@ -147,234 +160,308 @@ class Particle {
     }
 
     update(context) {
-        if (enableGravity) this.dy += 0.1; // Caída de chispas si hay gravedad
-        this.x += this.dx;
-        this.y += this.dy;
-        this.life -= this.decay;
-        this.radius *= 0.96;
         this.draw(context);
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.vy += this.gravity;
+        
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 0.02; // Desvanecimiento gradual
     }
 }
 
-function createSparks(x, y, color, count = 12) {
-    for (let i = 0; i < count; i++) {
-        particles.push(new Particle(x, y, color));
+let particles = [];
+
+function createExplosion(x, y) {
+    for (let i = 0; i < 16; i++) {
+        particles.push(new Particle(x, y));
     }
 }
 
-// -------------------------------------------------------------
-// CLASE CIRCLE (Orbes con Masa e Impulso)
-// -------------------------------------------------------------
-class Circle {
-    constructor(x, y, radius, color, text, speed) {
-        this.posX = x;
-        this.posY = y;
-        this.radius = radius;
+function handleParticles(context) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update(context);
+        if (particles[i].alpha <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+}
+
+// =============================================================
+// 4. CLASE POO: FALLING OBJECT (OBJETOS CAYENDO)
+// =============================================================
+class FallingObject {
+    constructor(id) {
+        this.id = id;
+        this.size = Math.random() * 20 + 55;
+        this.radius = this.size / 2;
+        this.resetToTop(true);
+    }
+
+    resetToTop(isFirstSpawn = false) {
+        this.posX = Math.random() * (window_width - this.size * 2) + this.size;
         
-        // MASA PROPORCIONAL AL ÁREA DEL CÍRCULO (m = π * r²)
-        this.mass = Math.PI * this.radius * this.radius;
+        if (isFirstSpawn) {
+            this.posY = -this.size - (Math.random() * window_height * 0.8);
+        } else {
+            this.posY = -this.size - (Math.random() * 120);
+        }
+
+        const item = loadedImages[Math.floor(Math.random() * loadedImages.length)];
+        this.image = item.img;
+        this.functionName = item.name;
+
+        let speedMultiplier = 1;
+        if (score > 20) {
+            speedMultiplier = 2.4;
+        } else if (score > 10) {
+            speedMultiplier = 1.7;
+        }
+
+        this.vx = (Math.random() - 0.5) * 4 * speedMultiplier;
+        this.vy = (Math.random() * 2.5 + 1.5) * speedMultiplier;
         
-        this.originalColor = color; 
-        this.color = color;         
-        this.text = text;
-        this.speed = speed;
-        
-        let angle = Math.random() * Math.PI * 2;
-        this.dx = Math.cos(angle) * this.speed;
-        this.dy = Math.sin(angle) * this.speed;
-        
-        this.isColliding = false;
+        this.g = 0.35 * speedMultiplier;
+        this.bounceFactor = 0.65;
+        this.friction = 0.98;
     }
 
     draw(context) {
         context.save();
-        const currentColor = this.isColliding ? "#00f3ff" : this.color;
 
-        context.shadowColor = currentColor;
-        context.shadowBlur = this.isColliding ? 25 : 12;
+        context.shadowColor = "#00f0ff";
+        context.shadowBlur = 15;
 
-        let gradient = context.createRadialGradient(
-            this.posX - this.radius * 0.3, 
-            this.posY - this.radius * 0.3, 
-            this.radius * 0.1, 
-            this.posX, 
-            this.posY, 
-            this.radius
-        );
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.3, currentColor);
-        gradient.addColorStop(1, '#000000');
+        if (this.image && this.image.complete && this.image.naturalWidth !== 0) {
+            context.drawImage(
+                this.image,
+                this.posX - this.radius,
+                this.posY - this.radius,
+                this.size,
+                this.size
+            );
+        } else {
+            context.fillStyle = "#00f0ff";
+            context.beginPath();
+            context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2);
+            context.fill();
+        }
 
-        context.beginPath();
-        context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
-        context.fillStyle = gradient;
-        context.fill();
-
-        context.lineWidth = this.isColliding ? 3 : 1.5;
-        context.strokeStyle = currentColor;
-        context.stroke();
-        context.closePath();
-
-        context.shadowBlur = 5;
-        context.shadowColor = "#ffffff";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.font = "bold 13px 'Orbitron', Arial, sans-serif";
+        context.shadowColor = "#ff007f";
+        context.shadowBlur = 8;
         context.fillStyle = "#ffffff";
-        context.fillText(this.text, this.posX, this.posY);
+        context.font = "bold 11px Orbitron, sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "bottom";
+        context.fillText(this.functionName, this.posX, this.posY - this.radius - 4);
 
         context.restore();
     }
 
     update(context) {
-        // 1. Aplicar Gravedad
-        if (enableGravity) {
-            this.dy += GRAVITY;
+        this.draw(context);
+
+        if (gravityEnabled) {
+            this.vy += this.g;
         }
 
-        // 2. Aplicar Fricción ambiental
-        if (enableFriction) {
-            this.dx *= FRICTION;
-            this.dy *= FRICTION;
-        }
+        this.posX += this.vx;
+        this.posY += this.vy;
 
-        this.posX += this.dx;
-        this.posY += this.dy;
+        this.vx *= this.friction;
 
-        // 3. Rebote en paredes con pérdida elástica de energía
+        // Paredes laterales
         if (this.posX + this.radius > window_width) {
             this.posX = window_width - this.radius;
-            this.dx = -this.dx * RESTITUTION;
-            createSparks(window_width, this.posY, this.color, 6);
+            this.vx = -this.vx * this.bounceFactor;
         } else if (this.posX - this.radius < 0) {
             this.posX = this.radius;
-            this.dx = -this.dx * RESTITUTION;
-            createSparks(0, this.posY, this.color, 6);
+            this.vx = -this.vx * this.bounceFactor;
         }
 
-        if (this.posY + this.radius > window_height) {
+        // Rebote en el suelo / techo
+        if (this.posY + this.radius >= window_height) {
             this.posY = window_height - this.radius;
-            this.dy = -this.dy * RESTITUTION;
-            // Reducir la fricción con el piso al rodar
-            if (enableGravity) this.dx *= 0.98; 
-            createSparks(this.posX, window_height, this.color, 6);
-        } else if (this.posY - this.radius < 0) {
+            this.vy = -this.vy * this.bounceFactor;
+
+            if (Math.abs(this.vy) < 1.2 && gravityEnabled) {
+                this.resetToTop();
+            }
+        } else if (this.posY - this.radius < 0 && !gravityEnabled) {
             this.posY = this.radius;
-            this.dy = -this.dy * RESTITUTION;
-            createSparks(this.posX, 0, this.color, 6);
+            this.vy = -this.vy * this.bounceFactor;
         }
-
-        this.draw(context);
     }
 
-    getDistance(otherCircle) {
-        const dx = otherCircle.posX - this.posX;
-        const dy = otherCircle.posY - this.posY;
-        return Math.sqrt(dx * dx + dy * dy);
+    getDistance(otherObject) {
+        let xDistance = otherObject.posX - this.posX;
+        let yDistance = otherObject.posY - this.posY;
+        return Math.sqrt(xDistance * xDistance + yDistance * yDistance);
     }
 
-    isCollidingWith(otherCircle) {
-        const distance = this.getDistance(otherCircle);
-        return distance < (this.radius + otherCircle.radius);
-    }
-
-    /**
-     * Resuelve el choque considerando Masa y Conservación de Momento Lineal
-     */
-    resolveCollision(otherCircle) {
-        if (!this.isCollidingWith(otherCircle)) return;
-
-        this.isColliding = true;
-        otherCircle.isColliding = true;
-
-        // Vector normal y distancia
-        const dx = otherCircle.posX - this.posX;
-        const dy = otherCircle.posY - this.posY;
-        const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-
-        const nx = dx / distance;
-        const ny = dy / distance;
-
-        // Emisión de chispas en el punto de contacto
-        const collisionX = this.posX + nx * this.radius;
-        const collisionY = this.posY + ny * this.radius;
-        createSparks(collisionX, collisionY, "#00f3ff", 12);
-
-        // 1. Separación física ponderada según sus masas
-        const overlap = (this.radius + otherCircle.radius) - distance;
-        const totalMass = this.mass + otherCircle.mass;
-
-        this.posX -= (overlap * (otherCircle.mass / totalMass)) * nx;
-        this.posY -= (overlap * (otherCircle.mass / totalMass)) * ny;
-        otherCircle.posX += (overlap * (this.mass / totalMass)) * nx;
-        otherCircle.posY += (overlap * (this.mass / totalMass)) * ny;
-
-        // 2. Velocidad relativa en la normal
-        const kx = this.dx - otherCircle.dx;
-        const ky = this.dy - otherCircle.dy;
-        const p = 2 * (nx * kx + ny * ky) / (this.mass + otherCircle.mass);
-
-        // 3. Intercambio de momento elástico
-        this.dx -= p * otherCircle.mass * nx;
-        this.dy -= p * otherCircle.mass * ny;
-        otherCircle.dx += p * this.mass * nx;
-        otherCircle.dy += p * this.mass * ny;
+    isPointInside(mouseX, mouseY) {
+        let xDistance = mouseX - this.posX;
+        let yDistance = mouseY - this.posY;
+        return Math.sqrt(xDistance * xDistance + yDistance * yDistance) <= this.radius;
     }
 }
 
-let circles = [];
+// =============================================================
+// 5. DETECCIÓN DE COLISIONES ENTRE OBJETOS (BOTÓN [F])
+// =============================================================
+function handleObjectCollisions() {
+    if (!collisionEnabled) return;
 
-const neonColors = [
-    "#ff0055", // Rosa Neón
-    "#ff9900", // Naranja Eléctrico
-    "#00ff66", // Verde Neón
-    "#ff00ff", // Magenta
-    "#ffff00", // Amarillo Neón
-    "#00ffff"  // Cyan
-];
+    for (let i = 0; i < objects.length; i++) {
+        for (let j = i + 1; j < objects.length; j++) {
+            let obj1 = objects[i];
+            let obj2 = objects[j];
 
-function generateCircles(n) {
-    circles = [];
-    for (let i = 0; i < n; i++) {
-        // Variación de tamaños de 15px a 45px para notar la diferencia de masas
-        let radius = Math.random() * 30 + 15; 
-        let x = Math.random() * (window_width - radius * 4) + radius * 2;
-        let y = Math.random() * (window_height - radius * 4) + radius * 2;
-        
-        let color = neonColors[Math.floor(Math.random() * neonColors.length)];
-        let speed = Math.random() * 3 + 1.5;
-        let text = `C${i + 1}`;
-        
-        circles.push(new Circle(x, y, radius, color, text, speed));
+            let distance = obj1.getDistance(obj2);
+
+            if (distance <= obj1.radius + obj2.radius) {
+                let tempVx = obj1.vx;
+                let tempVy = obj1.vy;
+                
+                obj1.vx = obj2.vx;
+                obj1.vy = obj2.vy;
+                
+                obj2.vx = tempVx;
+                obj2.vy = tempVy;
+
+                let overlap = (obj1.radius + obj2.radius) - distance;
+                let dx = (obj2.posX - obj1.posX) / (distance || 1);
+                let dy = (obj2.posY - obj1.posY) / (distance || 1);
+
+                obj1.posX -= dx * (overlap / 2);
+                obj1.posY -= dy * (overlap / 2);
+                obj2.posX += dx * (overlap / 2);
+                obj2.posY += dy * (overlap / 2);
+            }
+        }
     }
+}
+
+// =============================================================
+// 6. RENDERING Y ANIMACIÓN
+// =============================================================
+let objects = [];
+
+function generateObjects() {
+    objects = [];
+    for (let i = 0; i < TOTAL_OBJECTS; i++) {
+        objects.push(new FallingObject(i + 1));
+    }
+}
+
+function drawBackgroundAndUI() {
+    if (bgImage.complete && bgImage.naturalWidth !== 0) {
+        ctx.drawImage(bgImage, 0, 0, window_width, window_height);
+    } else {
+        ctx.fillStyle = "#0d0221";
+        ctx.fillRect(0, 0, window_width, window_height);
+    }
+
+    ctx.fillStyle = "rgba(10, 5, 25, 0.2)";
+    ctx.fillRect(0, 0, window_width, window_height);
+
+    // MARCADOR ESQUINA SUPERIOR DERECHA
+    ctx.save();
+    ctx.fillStyle = "rgba(10, 15, 30, 0.85)";
+    ctx.strokeStyle = "#ff007f";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "#ff007f";
+    ctx.shadowBlur = 10;
+    ctx.fillRect(window_width - 250, 20, 230, 85);
+    ctx.strokeRect(window_width - 250, 20, 230, 85);
+
+    ctx.shadowColor = "transparent";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 15px Orbitron, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`ELIMINADOS: ${score}`, window_width - 235, 48);
+
+    let speedText = "Velocidad: Inicial";
+    let speedColor = "#00ff88";
+
+    if (score > 20) {
+        speedText = "Velocidad: Alta !!!";
+        speedColor = "#ff2255";
+    } else if (score > 10) {
+        speedText = "Velocidad: Media !";
+        speedColor = "#ffbb00";
+    }
+
+    ctx.fillStyle = speedColor;
+    ctx.font = "bold 12px Orbitron, sans-serif";
+    ctx.fillText(speedText, window_width - 235, 75);
+    ctx.restore();
 }
 
 function animate() {
-    ctx.fillStyle = "rgba(9, 10, 15, 0.3)";
-    ctx.fillRect(0, 0, window_width, window_height);
+    drawBackgroundAndUI();
 
-    circles.forEach(circle => circle.isColliding = false);
+    handleObjectCollisions();
 
-    // Calcular choques físicos entre orbes
-    for (let i = 0; i < circles.length; i++) {
-        for (let j = i + 1; j < circles.length; j++) {
-            circles[i].resolveCollision(circles[j]);
-        }
-    }
-
-    circles.forEach(circle => {
-        circle.update(ctx);
+    objects.forEach(obj => {
+        obj.update(ctx);
     });
 
-    for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].update(ctx);
-        if (particles[i].life <= 0 || particles[i].radius <= 0.2) {
-            particles.splice(i, 1);
-        }
-    }
+    // Renderizar y actualizar partículas
+    handleParticles(ctx);
 
     requestAnimationFrame(animate);
 }
 
-generateCircles(20);
+// =============================================================
+// 7. EVENTOS E INTERACTIVIDAD
+// =============================================================
+const btnG = document.getElementById("btnG");
+const btnF = document.getElementById("btnF");
+
+btnG.addEventListener("click", toggleGravity);
+btnF.addEventListener("click", toggleCollision);
+
+function toggleGravity() {
+    gravityEnabled = !gravityEnabled;
+    btnG.classList.toggle("active", gravityEnabled);
+    btnG.innerText = `BOTÓN [G]: GRAVEDAD ${gravityEnabled ? "ON" : "OFF"}`;
+}
+
+function toggleCollision() {
+    collisionEnabled = !collisionEnabled;
+    btnF.classList.toggle("active", collisionEnabled);
+    btnF.innerText = `BOTÓN [F]: COLISIÓN ${collisionEnabled ? "ON" : "OFF"}`;
+}
+
+window.addEventListener("keydown", function(event) {
+    if (event.key === "g" || event.key === "G") {
+        toggleGravity();
+    } else if (event.key === "f" || event.key === "F") {
+        toggleCollision();
+    }
+});
+
+// CLIC EN EL CANVAS PARA ELIMINAR Y GENERAR EXPLOSIÓN DE PARTÍCULAS
+canvas.addEventListener("click", function (event) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i].isPointInside(mouseX, mouseY)) {
+            score++;
+            
+            // Generar partículas en las coordenadas del clic
+            createExplosion(objects[i].posX, objects[i].posY);
+            
+            // Reaparecer arriba
+            objects[i].resetToTop();
+            break;
+        }
+    }
+});
+
+generateObjects();
 animate();
